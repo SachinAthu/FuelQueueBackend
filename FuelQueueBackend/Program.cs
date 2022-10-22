@@ -46,9 +46,9 @@ builder.Services.AddScoped<UsersService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseSwagger();
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
     app.UseSwaggerUI();
 }
 
@@ -56,5 +56,11 @@ app.UseHttpsRedirection();
 app.MapControllers();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// test route
+app.MapGet("/", async context =>
+{
+    await context.Response.WriteAsync("FuelQueue api working!");
+});
 
 app.Run();

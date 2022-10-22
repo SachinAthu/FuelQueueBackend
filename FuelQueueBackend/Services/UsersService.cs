@@ -17,9 +17,12 @@ namespace FuelQueueBackend.Services
         {
             try
             {
-                MongoClient client = new MongoClient(mongoDBSettings.Value.ConnectionURI);
-                IMongoDatabase database = client.GetDatabase(mongoDBSettings.Value.DatabaseName);
-                _usersCollection = database.GetCollection<User>(mongoDBSettings.Value.UsersCollectionName);
+                // MongoClient client = new MongoClient(mongoDBSettings.Value.ConnectionURI);
+                // IMongoDatabase database = client.GetDatabase(mongoDBSettings.Value.DatabaseName);
+                // _usersCollection = database.GetCollection<User>(mongoDBSettings.Value.UsersCollectionName);
+
+                _usersCollection = new MongoDBService(mongoDBSettings).getInstance<User>(mongoDBSettings.Value.UsersCollectionName);
+
             }
             catch (Exception ex)
             {

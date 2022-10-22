@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FuelQueueBackend.Controllers
 {
 
-    [Route("api/[controller]")]
+    [Route("api/users")]
     [ApiController]
     [Authorize]
     public class UsersController: ControllerBase
