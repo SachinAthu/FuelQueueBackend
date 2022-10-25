@@ -126,10 +126,12 @@ namespace FuelQueueBackend.Controllers
                 var res = await _usersService.LoginUser(user);
 
                 // invalid request
-                if (res == "1") return BadRequest();
+                if (res.GetType() == typeof(int) && res == 1) return BadRequest();
 
                 // invalid credentials, no user found
-                if (res == "2") return NotFound();
+                if (res.GetType() == typeof(int) && res == 2) return NotFound();
+
+                User resUser = new User();
 
                 return Ok(res);
             }

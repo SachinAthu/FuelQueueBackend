@@ -34,8 +34,6 @@ namespace FuelQueueBackend.Services
         // get all users
         public async Task<List<User>> GetAllUsers()
         {
-            Console.WriteLine("called");
-
             try
             {
                 return await _usersCollection.Find(new BsonDocument()).ToListAsync();
@@ -55,7 +53,7 @@ namespace FuelQueueBackend.Services
                 FilterDefinition<User> filter = Builders<User>.Filter.Eq("Id", id);
                 long count = await _usersCollection.Find(filter).CountDocumentsAsync();
                 
-                // not user found
+                // no user found
                 if(count == 0) return null;
                 
                 return await _usersCollection.Find(filter).FirstAsync();
@@ -67,18 +65,19 @@ namespace FuelQueueBackend.Services
             }
         }
 
-        // create/register user
+        // create / register user
         public async Task<int> CreateUser(User user)
         {
             try
             {
-                FilterDefinition<User> filter = Builders<User>.Filter.Eq("email", user.Email);
+                FilterDefinition<User> filter = Builders<User>.Filter.Eq("mobile_number", user.MobileNumber);
                 long count = await _usersCollection.Find(filter).CountDocumentsAsync();
 
                 // user already exists
                 if (count > 0) return 1;
 
                 await _usersCollection.InsertOneAsync(user);
+
                 return 0;
             }
             catch (Exception ex)
@@ -99,7 +98,7 @@ namespace FuelQueueBackend.Services
                 // no user found
                 if(count1 == 0) return 1;
 
-                FilterDefinition<User> filter = Builders<User>.Filter.Eq("email", user.Email);
+                FilterDefinition<User> filter = Builders<User>.Filter.Eq("mobile_number", user.MobileNumber);
                 long count2 = await _usersCollection.Find(filter).CountDocumentsAsync();
 
                 // user already exists
@@ -137,21 +136,23 @@ namespace FuelQueueBackend.Services
         }
 
         // login
-        public async Task<string?> LoginUser(User user)
+        public async Task<dynamic> LoginUser(User user)
         {
             try
             {
                 // check credentials
-                if (user.Email == null || user.Password == null || user.Type == null) return "1";
+                if (user.MobileNumber == null || user.Password == null || user.UserType == null) return 1;
 
-                FilterDefinition<User> emailFilter = Builders<User>.Filter.Eq("email", user.Email);
+                FilterDefinition<User> emailFilter = Builders<User>.Filter.Eq("mobile_number", user.MobileNumber);
                 FilterDefinition<User> passwordFilter = Builders<User>.Filter.Eq("password", user.Password);
-                FilterDefinition<User> typeFilter = Builders<User>.Filter.Eq("type", user.Type);
+                FilterDefinition<User> typeFilter = Builders<User>.Filter.Eq("type", user.UserType);
                 FilterDefinition<User> filter = Builders<User>.Filter.And(emailFilter, passwordFilter, typeFilter);
                 long count = await _usersCollection.Find(filter).CountDocumentsAsync();
 
                 // invalid credentials, no user found
-                if (count == 0) return "2";
+                if (count == 0) return 2;
+
+                User user1 = await _usersCollection.Find(filter).FirstAsync(); ;
 
                 // create JWT token
                 var builder = WebApplication.CreateBuilder();
@@ -165,8 +166,8 @@ namespace FuelQueueBackend.Services
                     Subject = new ClaimsIdentity(new[]
                     {
                         new Claim("Id", Guid.NewGuid().ToString()),
-                        new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                        new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                        new Claim(JwtRegisteredClaimNames.Sub, user.MobileNumber),
+                        new Claim(JwtRegisteredClaimNames.Email, user.MobileNumber),
                         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                     }),
                     Expires = DateTime.UtcNow.AddMinutes(60),
@@ -179,7 +180,10 @@ namespace FuelQueueBackend.Services
                 var token = tokenHandler.CreateToken(tokenDescriptor);
                 var jwtToken = tokenHandler.WriteToken(token);
 
-                return jwtToken;
+                user1.Token = jwtToken;
+                user1.Password = "";
+
+                return user1;
             }
             catch (Exception ex)
             {
